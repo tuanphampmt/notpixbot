@@ -41,7 +41,7 @@ const userAgents = [
   "Mozilla/5.0 (iPhone; CPU iPhone OS 14_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1",
 ];
 
-function waitForElement(selector, timeout = 10000) {
+function waitForElement(selector, minTimeout = 4000, maxTimeout = 10000) {
   return new Promise((resolve, reject) => {
     // Chờ 3 giây trước khi kiểm tra
     setTimeout(() => {
@@ -82,10 +82,11 @@ function waitForElement(selector, timeout = 10000) {
             `Timeout: Phần tử ${selector} không xuất hiện sau ${timeout}ms`
           )
         );
-      }, timeout - 3000); // Đặt lại timeout để tránh trừ đi 3 giây chờ ban đầu
-    }, 3000); // Chờ 3 giây trước khi bắt đầu kiểm tra hoặc theo dõi phần tử
+      }, maxTimeout - minTimeout); // Đặt lại timeout để tránh trừ đi 3 giây chờ ban đầu
+    }, minTimeout); // Chờ 3 giây trước khi bắt đầu kiểm tra hoặc theo dõi phần tử
   });
 }
+
 function randomColor() {
   return colors[Math.floor(Math.random() * colors.length)];
 }
@@ -241,6 +242,10 @@ async function gettgWebAppData() {
 async function main() {
   const tgWebAppData = await gettgWebAppData();
   if (tgWebAppData) {
+    const claim = await claimPX(tgWebAppData);
+    if (claim) {
+      console.log("Claim thành công: ", claim?.claimed);
+    }
     while (true) {
       // Vòng lặp vô hạn thay thế setInterval
       const statusInfo = await getStatusUser(tgWebAppData);
@@ -275,15 +280,3 @@ async function main() {
 }
 
 main();
-
-setInterval(async () => {
-  const tgWebAppData = await gettgWebAppData();
-  if (tgWebAppData) {
-    const claim = await claimPX(tgWebAppData);
-    if (claim) {
-      console.info(`Claim PX thành công: ${claim.claimed} `);
-    } else {
-      window.location.reload();
-    }
-  }
-}, 1000 * 60);
