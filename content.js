@@ -281,6 +281,7 @@ async function main() {
         console.log("Claim thành công: ", claim?.claimed);
       } else {
         window.location.reload();
+        return;
       }
     }, randomDeplay(60000, 62000)); // 60 giây
 
