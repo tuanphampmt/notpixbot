@@ -279,6 +279,8 @@ async function main() {
       const claim = await claimPX(tgWebAppData);
       if (claim) {
         console.log("Claim thành công: ", claim?.claimed);
+      } else {
+        window.location.reload();
       }
     }, randomDeplay(60000, 62000)); // 60 giây
 
