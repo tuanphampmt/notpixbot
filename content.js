@@ -34,11 +34,44 @@ const colors = [
 ];
 
 const userAgents = [
+  // Windows User Agents
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Safari/605.1.15",
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.107 Safari/537.36",
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0",
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:91.0) Gecko/20100101 Firefox/91.0",
+  "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.77 Safari/537.36",
+
+  // macOS User Agents
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Safari/605.1.15",
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.2 Safari/605.1.15",
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 11_2_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36",
+
+  // Linux User Agents
   "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.101 Safari/537.36",
+  "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:89.0) Gecko/20100101 Firefox/89.0",
+  "Mozilla/5.0 (X11; Linux i686; rv:91.0) Gecko/20100101 Firefox/91.0",
+
+  // Android User Agents
+  "Mozilla/5.0 (Linux; Android 10; SM-G973F) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Mobile Safari/537.36",
+  "Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Mobile Safari/537.36",
+  "Mozilla/5.0 (Linux; Android 9; SAMSUNG SM-G950F) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/14.0 Chrome/91.0.4472.77 Mobile Safari/537.36",
+
+  // iPhone User Agents
   "Mozilla/5.0 (iPhone; CPU iPhone OS 14_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1",
+  "Mozilla/5.0 (iPhone; CPU iPhone OS 13_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1 Mobile/15E148 Safari/604.1",
+  "Mozilla/5.0 (iPhone; CPU iPhone OS 12_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.1 Mobile/15E148 Safari/604.1",
+
+  // iPad User Agents
+  "Mozilla/5.0 (iPad; CPU OS 14_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1",
+  "Mozilla/5.0 (iPad; CPU OS 13_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1 Mobile/15E148 Safari/604.1",
+
+  // Edge Browser User Agents
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36 Edg/91.0.864.59",
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:91.0) Gecko/20100101 Firefox/91.0",
+
+  // Safari on iOS
+  "Mozilla/5.0 (iPhone; CPU iPhone OS 14_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1",
+  "Mozilla/5.0 (iPad; CPU OS 14_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Safari/604.1",
 ];
 
 function waitForElement(selector, minTimeout = 4000, maxTimeout = 10000) {
@@ -79,7 +112,7 @@ function waitForElement(selector, minTimeout = 4000, maxTimeout = 10000) {
         observer.disconnect();
         reject(
           new Error(
-            `Timeout: Phần tử ${selector} không xuất hiện sau ${timeout}ms`
+            `Timeout: Phần tử ${selector} không xuất hiện sau ${maxTimeout}ms`
           )
         );
       }, maxTimeout - minTimeout); // Đặt lại timeout để tránh trừ đi 3 giây chờ ban đầu
@@ -93,6 +126,10 @@ function randomColor() {
 
 function randomPixelId() {
   return Math.floor(Math.random() * (1000000 - 0 + 1)) + 0;
+}
+
+function randomDeplay(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
 function getRandomUserAgent() {
@@ -220,7 +257,6 @@ async function gettgWebAppData() {
           cancelable: true,
         });
         lauchButton?.dispatchEvent(clickEvent);
-        await sleep(5000);
         const waitIframe = await waitForElement("iframe");
         if (waitIframe) {
           const iframe = document.querySelector("iframe");
@@ -235,47 +271,63 @@ async function gettgWebAppData() {
   }
 }
 
-// content.js:210 Error: TypeError: Cannot read properties of null (reading 'dispatchEvent')
-//     at gettgWebAppData (content.js:202:17)
-//     at async main (content.js:216:24)
-
 async function main() {
   const tgWebAppData = await gettgWebAppData();
   if (tgWebAppData) {
-    const claim = await claimPX(tgWebAppData);
-    if (claim) {
-      console.log("Claim thành công: ", claim?.claimed);
-    }
-    while (true) {
-      // Vòng lặp vô hạn thay thế setInterval
-      const statusInfo = await getStatusUser(tgWebAppData);
-      if (!statusInfo) {
-        window.location.reload();
+    // Thực hiện claimPX mỗi 60 giây
+    setInterval(async () => {
+      const claim = await claimPX(tgWebAppData);
+      if (claim) {
+        console.log("Claim thành công: ", claim?.claimed);
       }
+    }, 1000 * 60); // 60 giây
 
-      // Đếm ngược và tô màu
-      for (let i = statusInfo?.charges; i > 0; i--) {
-        console.info(`Số lần tô màu còn lại: ${i}`);
-        const resultStartRepaint = await getStartRepaint(tgWebAppData);
-        if (resultStartRepaint && resultStartRepaint?.balance) {
-          console.info(
-            `Bạn đã tô màu thành công. Số dư hiện tại là: ${resultStartRepaint?.balance}`
-          );
+    // Hàm chính để quản lý logic kiểm tra status và repaint
+    const manageStatusAndRepaint = async () => {
+      try {
+        const statusInfo = await getStatusUser(tgWebAppData);
+        if (!statusInfo) {
+          window.location.reload();
+          return;
         }
-        await this.sleep(3000); // Dừng lại 3 giây giữa mỗi lần đếm ngược
-      }
 
-      // Vòng lặp vô hạn thay thế setInterval
-      const statusInfo2 = await getStatusUser(tgWebAppData);
-      if (!statusInfo2) {
-        window.location.reload();
+        // Đếm ngược số lần tô màu còn lại
+        for (let i = statusInfo?.charges; i > 0; i--) {
+          console.info(`Số lần tô màu còn lại: ${i}`);
+          const resultStartRepaint = await getStartRepaint(tgWebAppData);
+
+          if (resultStartRepaint && resultStartRepaint?.balance) {
+            console.info(
+              `Bạn đã tô màu thành công. Số dư hiện tại là: ${resultStartRepaint?.balance}`
+            );
+          }
+          // Tạm dừng 3 giây giữa các lần tô màu
+          await sleep(randomDeplay(2000, 3000));
+        }
+
+        // Kiểm tra lại trạng thái người dùng sau khi hoàn thành tô màu
+        const statusInfo2 = await getStatusUser(tgWebAppData);
+        if (!statusInfo2) {
+          window.location.reload();
+          return;
+        }
+
+        // Chờ thời gian reCharge trước khi tiếp tục tô màu
+        console.info(
+          `Bạn phải chờ ${statusInfo2?.reChargeTimer} giây để tiếp tục tô màu`
+        );
+        await sleep(statusInfo2?.reChargeTimer * 1000);
+
+        // Sau khi hết thời gian reCharge, gọi lại hàm để tiếp tục chu kỳ
+        manageStatusAndRepaint();
+      } catch (error) {
+        console.error("Có lỗi xảy ra: ", error);
+        window.location.reload(); // Reload trang nếu có lỗi
       }
-      // Chờ thời gian reCharge trước khi lặp lại chu kỳ
-      console.info(
-        `Bạn phải chờ ${statusInfo2?.reChargeTimer} giây để tiếp tục tô màu`
-      );
-      await sleep(statusInfo2?.reChargeTimer);
-    }
+    };
+
+    // Bắt đầu vòng lặp bằng cách gọi hàm
+    manageStatusAndRepaint();
   }
 }
 
