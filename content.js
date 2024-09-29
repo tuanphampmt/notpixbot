@@ -280,7 +280,7 @@ async function main() {
       if (claim) {
         console.log("Claim thành công: ", claim?.claimed);
       }
-    }, 1000 * 60); // 60 giây
+    }, randomDeplay(60000, 62000)); // 60 giây
 
     // Hàm chính để quản lý logic kiểm tra status và repaint
     const manageStatusAndRepaint = async () => {
