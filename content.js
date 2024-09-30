@@ -74,62 +74,12 @@ const userAgents = [
   "Mozilla/5.0 (iPad; CPU OS 14_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Safari/604.1",
 ];
 
-function waitForElement(selector, minTimeout = 4000, maxTimeout = 10000) {
-  return new Promise((resolve, reject) => {
-    // Chờ 3 giây trước khi kiểm tra
-    setTimeout(() => {
-      // Kiểm tra xem phần tử đã tồn tại sẵn chưa
-      const element = document.querySelector(selector);
-      if (element) {
-        resolve(element);
-        return; // Thoát ra ngay nếu tìm thấy phần tử
-      }
-
-      // Thiết lập MutationObserver để theo dõi DOM nếu phần tử chưa tồn tại
-      const observer = new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
-          if (!mutation.addedNodes) return;
-
-          for (let i = 0; i < mutation.addedNodes.length; i++) {
-            const node = mutation.addedNodes[i];
-            if (node.matches && node.matches(selector)) {
-              // Khi phần tử xuất hiện, dừng observer và trả về kết quả
-              observer.disconnect();
-              resolve(node);
-              return;
-            }
-          }
-        });
-      });
-
-      observer.observe(document.body, {
-        childList: true,
-        subtree: true,
-      });
-
-      // Đặt timeout để tránh chờ vô hạn
-      setTimeout(() => {
-        observer.disconnect();
-        reject(
-          new Error(
-            `Timeout: Phần tử ${selector} không xuất hiện sau ${maxTimeout}ms`
-          )
-        );
-      }, maxTimeout - minTimeout); // Đặt lại timeout để tránh trừ đi 3 giây chờ ban đầu
-    }, minTimeout); // Chờ 3 giây trước khi bắt đầu kiểm tra hoặc theo dõi phần tử
-  });
-}
-
 function randomColor() {
   return colors[Math.floor(Math.random() * colors.length)];
 }
 
 function randomPixelId() {
   return Math.floor(Math.random() * (1000000 - 0 + 1)) + 0;
-}
-
-function randomDeplay(min, max) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
 function getRandomUserAgent() {
@@ -183,7 +133,8 @@ async function httpRequest(method, url, data, userData) {
 }
 
 function sleep(ms) {
-  console.debug(`Chờ ${ms / 1000} giây`);
+  // Chờ thời gian reCharge trước khi lặp lại chu kỳ
+  console.info(`Bạn phải chờ ${ms / 1000} giây để tiếp tục`);
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
@@ -243,95 +194,128 @@ function parseUserData(iframe) {
       ?.replace(/\r/g, "") || ""
   );
 }
+
+let isFetchingData = false; // Cờ kiểm tra việc lấy dữ liệu
+
+function getIframe() {
+  return document.querySelector("iframe");
+}
+
+function reloadIframe() {
+  window.location.reload();
+}
+
 async function gettgWebAppData() {
-  let userData = null;
+  // Kiểm tra nếu đang có tiến trình lấy dữ liệu
+  if (isFetchingData) {
+    console.log("Dữ liệu đang được lấy, vui lòng đợi...");
+    return null;
+  }
+
   try {
-    const waitLauchButton = await waitForElement(".new-message-bot-commands");
-    if (waitLauchButton) {
-      const lauchButton = document.querySelector(".new-message-bot-commands");
-      if (lauchButton) {
-        console.log("lauchButton", lauchButton);
-        const clickEvent = new MouseEvent("click", {
-          view: window,
-          bubbles: true,
-          cancelable: true,
-        });
-        lauchButton?.dispatchEvent(clickEvent);
-        const waitIframe = await waitForElement("iframe");
-        if (waitIframe) {
-          const iframe = document.querySelector("iframe");
-          userData = parseUserData(iframe?.src || "");
-        }
+    let iframe = getIframe();
+    if (iframe) {
+      return parseUserData(iframe.src || "");
+    }
+    isFetchingData = true; // Đặt cờ khi bắt đầu lấy dữ liệu
+
+    await sleep(10000);
+    const lauchButton = document.querySelector(".new-message-bot-commands");
+    if (!lauchButton) {
+      console.log("Không tìm thấy lauchButton");
+      iframe = getIframe();
+      if (iframe) {
+        return parseUserData(iframe.src || "");
       }
+      return null;
+    }
+
+    lauchButton.dispatchEvent(
+      new MouseEvent("click", {
+        view: window,
+        bubbles: true,
+        cancelable: true,
+      })
+    );
+
+    await sleep(5000);
+    iframe = getIframe();
+    if (iframe) {
+      return parseUserData(iframe.src || "");
+    } else {
+      console.log("Không tìm thấy iframe.");
+      return null;
     }
   } catch (error) {
     console.error("Error:", error);
+    return null;
   } finally {
-    return userData;
+    isFetchingData = false; // Đặt cờ về false khi hoàn thành việc lấy dữ liệu
+  }
+}
+
+async function processStatus(tgWebAppData) {
+  console.log("Bắt đầu tô màu.");
+  while (true) {
+    let statusInfo = await getStatusUser(tgWebAppData);
+    if (!statusInfo) {
+      reloadIframe();
+      return;
+    }
+
+    for (let i = statusInfo.charges; i > 0; i--) {
+      console.info(`Số lần tô màu còn lại: ${i}`);
+      const result = await getStartRepaint(tgWebAppData);
+      if (result && result.balance) {
+        console.info(
+          `Bạn đã tô màu thành công. Số dư hiện tại là: ${result.balance}`
+        );
+      }
+      await sleep(3000);
+    }
+
+    statusInfo = await getStatusUser(tgWebAppData);
+    if (!statusInfo) {
+      reloadIframe();
+      return;
+    }
+
+    await sleep(statusInfo.reChargeTimer);
   }
 }
 
 async function main() {
   const tgWebAppData = await gettgWebAppData();
   if (tgWebAppData) {
-    // Thực hiện claimPX mỗi 60 giây
-    setInterval(async () => {
-      const claim = await claimPX(tgWebAppData);
-      if (claim) {
-        console.log("Claim thành công: ", claim?.claimed);
-      } else {
-        window.location.reload();
-        return;
-      }
-    }, randomDeplay(60000, 62000)); // 60 giây
-
-    // Hàm chính để quản lý logic kiểm tra status và repaint
-    const manageStatusAndRepaint = async () => {
-      try {
-        const statusInfo = await getStatusUser(tgWebAppData);
-        if (!statusInfo) {
-          window.location.reload();
-          return;
-        }
-
-        // Đếm ngược số lần tô màu còn lại
-        for (let i = statusInfo?.charges; i > 0; i--) {
-          console.info(`Số lần tô màu còn lại: ${i}`);
-          const resultStartRepaint = await getStartRepaint(tgWebAppData);
-
-          if (resultStartRepaint && resultStartRepaint?.balance) {
-            console.info(
-              `Bạn đã tô màu thành công. Số dư hiện tại là: ${resultStartRepaint?.balance}`
-            );
-          }
-          // Tạm dừng 3 giây giữa các lần tô màu
-          await sleep(randomDeplay(2000, 3000));
-        }
-
-        // Kiểm tra lại trạng thái người dùng sau khi hoàn thành tô màu
-        const statusInfo2 = await getStatusUser(tgWebAppData);
-        if (!statusInfo2) {
-          window.location.reload();
-          return;
-        }
-
-        // Chờ thời gian reCharge trước khi tiếp tục tô màu
-        console.info(
-          `Bạn phải chờ ${statusInfo2?.reChargeTimer} giây để tiếp tục tô màu`
-        );
-        await sleep(statusInfo2?.reChargeTimer * 1000);
-
-        // Sau khi hết thời gian reCharge, gọi lại hàm để tiếp tục chu kỳ
-        manageStatusAndRepaint();
-      } catch (error) {
-        console.error("Có lỗi xảy ra: ", error);
-        window.location.reload(); // Reload trang nếu có lỗi
-      }
-    };
-
-    // Bắt đầu vòng lặp bằng cách gọi hàm
-    manageStatusAndRepaint();
+    console.log("Dữ liệu lấy được:", tgWebAppData);
+    await processStatus(tgWebAppData);
+  } else {
+    console.log(
+      "Không có dữ liệu tgWebAppData hoặc đang trong quá trình lấy dữ liệu"
+    );
   }
 }
 
+async function handleClaimPX() {
+  let tgWebAppData = await gettgWebAppData();
+  if (!tgWebAppData) return null;
+
+  console.log("Dữ liệu lấy được:", tgWebAppData);
+  const claim = await claimPX(tgWebAppData);
+  if (claim) {
+    console.info(`Claim $PX thành công: ${claim.claimed}`);
+  } else {
+    reloadIframe();
+  }
+}
+
+// Thay thế setInterval bằng setTimeout để tự động điều chỉnh thời gian chờ
+function scheduleClaimPX() {
+  setTimeout(async () => {
+    await handleClaimPX();
+    scheduleClaimPX(); // Gọi lại để tiếp tục lặp
+  }, 1000 * 65); // Lặp lại sau mỗi 65 giây
+}
+
 main();
+scheduleClaimPX();
