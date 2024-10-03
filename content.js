@@ -33,10 +33,16 @@ const colors = [
   "#000000",
 ];
 
+// const pixelIds = [
+//   497497, 497498, 497499, 497500, 498497, 498498, 498499, 498500, 499497,
+//   499498, 499499, 499500,
+// ];
+
 const pixelIds = [
-  497497, 497498, 497499, 497500, 498497, 498498, 498499, 498500, 499497,
-  499498, 499499, 499500,
+  474493, 474494, 474495, 474496, 473493, 473494, 473495, 473496, 479500,
+  479501, 479502, 479503, 479504, 479505, 479506, 479507, 479508, 479509,
 ];
+
 const userAgents = [
   // Windows User Agents
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
@@ -299,15 +305,23 @@ async function processPaint() {
 
         if (pixel?.color !== "#000000") {
           console.info(`Số lần tô màu còn lại: ${i}`);
+
+          // Kiểm tra lại màu ngay trước khi tô màu
+          const currentPixel = await getPixelColor(tgWebAppData, pixelIds[j]); // Kiểm tra lại
+          if (currentPixel?.color === "#000000") {
+            console.warn(
+              `Pixel ${pixelIds[j]} đã đổi sang màu #000000, bỏ qua...`
+            );
+            continue; // Bỏ qua pixel này nếu nó đã bị thay đổi
+          }
+
           const result = await getStartRepaint(tgWebAppData, pixel?.id);
 
           if (result && result.balance) {
             console.info(
-              `
-                + Bạn đã tô màu thành công.
-                + Số điểm nhận đc: ${result.balance - userBalance}. 
-                + Số dư hiện tại là: ${result.balance}
-              `
+              `+ Bạn đã tô màu thành công.
+           + Số điểm nhận đc: ${result.balance - userBalance}. 
+           + Số dư hiện tại là: ${result.balance}`
             );
             userBalance = result.balance;
             checkPaint = true; // Đặt cờ thành true vì có pixel được sơn màu
@@ -320,7 +334,7 @@ async function processPaint() {
         i++; // Không giảm i nếu không pixel nào thỏa điều kiện
       }
 
-      if (i !== 1) {
+      if (i !== 1 && checkPaint) {
         await sleep(2000); // Nghỉ 2 giây giữa các lần tô màu
       }
     }
