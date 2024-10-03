@@ -33,7 +33,10 @@ const colors = [
   "#000000",
 ];
 
-const pixelIds = [497496, 497497, 497498, 497499, 497500, 498498, 498500];
+const pixelIds = [
+  497497, 497498, 497499, 497500, 498497, 498498, 498499, 498500, 499497,
+  499498, 499499, 499500,
+];
 const userAgents = [
   // Windows User Agents
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
@@ -153,13 +156,27 @@ async function getStatusUser(userData) {
   }
 }
 
-async function getStartRepaint(userData) {
+async function getPixelColor(userData, pixelId) {
+  try {
+    const response = await httpRequest(
+      "GET",
+      `https://notpx.app/api/v1/image/get/${pixelId}`,
+      null,
+      userData
+    );
+    return response?.pixel;
+  } catch (error) {
+    return null;
+  }
+}
+
+async function getStartRepaint(userData, id) {
   try {
     const response = await httpRequest(
       "POST",
       "https://notpx.app/api/v1/repaint/start",
       {
-        pixelId: randomPixelId(),
+        pixelId: id,
         newColor: "#000000",
       },
       userData
@@ -273,16 +290,30 @@ async function processPaint() {
     if (!statusInfo) {
       reloadIframe();
     }
-
+    let userBalance = statusInfo.userBalance;
     for (let i = statusInfo.charges; i > 0; i--) {
       console.info(`Số lần tô màu còn lại: ${i}`);
-      const result = await getStartRepaint(tgWebAppData);
-      if (result && result.balance) {
-        console.info(
-          `Bạn đã tô màu thành công. Số dư hiện tại là: ${result.balance}`
-        );
+      for (let j = 0; j < pixelIds.length; j++) {
+        const pixel = await getPixelColor(tgWebAppData, pixelIds[j]);
+        if (pixel?.color !== "#000000") {
+          const result = await getStartRepaint(tgWebAppData, pixel?.id);
+          if (result && result.balance) {
+            console.info(
+              `
+               + Bạn đã tô màu thành công.
+               + Số điểm nhận đc: ${result.balance - userBalance}. 
+               + Số dư hiện tại là: ${result.balance}
+              `
+            );
+            userBalance = result.balance;
+          }
+          break;
+        }
       }
-      await sleep(3000);
+
+      if (i !== 1) {
+        await sleep(2000);
+      }
     }
 
     statusInfo = await getStatusUser(tgWebAppData);
