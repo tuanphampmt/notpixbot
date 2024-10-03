@@ -292,27 +292,36 @@ async function processPaint() {
     }
     let userBalance = statusInfo.userBalance;
     for (let i = statusInfo.charges; i > 0; i--) {
-      console.info(`Số lần tô màu còn lại: ${i}`);
+      let checkPaint = false; // Cờ để kiểm tra xem có pixel nào được sơn màu không
+
       for (let j = 0; j < pixelIds.length; j++) {
         const pixel = await getPixelColor(tgWebAppData, pixelIds[j]);
+
         if (pixel?.color !== "#000000") {
+          console.info(`Số lần tô màu còn lại: ${i}`);
           const result = await getStartRepaint(tgWebAppData, pixel?.id);
+
           if (result && result.balance) {
             console.info(
               `
-               + Bạn đã tô màu thành công.
-               + Số điểm nhận đc: ${result.balance - userBalance}. 
-               + Số dư hiện tại là: ${result.balance}
+                + Bạn đã tô màu thành công.
+                + Số điểm nhận đc: ${result.balance - userBalance}. 
+                + Số dư hiện tại là: ${result.balance}
               `
             );
             userBalance = result.balance;
+            checkPaint = true; // Đặt cờ thành true vì có pixel được sơn màu
           }
-          break;
+          break; // Ngừng vòng lặp nếu đã sơn màu thành công
         }
       }
 
+      if (!checkPaint) {
+        i++; // Không giảm i nếu không pixel nào thỏa điều kiện
+      }
+
       if (i !== 1) {
-        await sleep(2000);
+        await sleep(2000); // Nghỉ 2 giây giữa các lần tô màu
       }
     }
 
