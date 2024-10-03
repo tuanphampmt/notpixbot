@@ -33,6 +33,7 @@ const colors = [
   "#000000",
 ];
 
+const pixelIds = [497496, 497497, 497498, 497499, 497500, 498498, 498500];
 const userAgents = [
   // Windows User Agents
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
@@ -79,7 +80,7 @@ function randomColor() {
 }
 
 function randomPixelId() {
-  return Math.floor(Math.random() * (1000000 - 0 + 1)) + 0;
+  return pixelIds[Math.floor(Math.random() * pixelIds.length)];
 }
 
 function getRandomUserAgent() {
@@ -159,7 +160,7 @@ async function getStartRepaint(userData) {
       "https://notpx.app/api/v1/repaint/start",
       {
         pixelId: randomPixelId(),
-        newColor: randomColor(),
+        newColor: "#000000",
       },
       userData
     );
@@ -197,49 +198,55 @@ function parseUserData(iframe) {
 
 let isFetchingData = false; // Cờ kiểm tra việc lấy dữ liệu
 
-function getIframe() {
-  return document.querySelector("iframe");
-}
-
 function reloadIframe() {
   window.location.reload();
 }
 
-async function gettgWebAppData() {
-  // Kiểm tra nếu đang có tiến trình lấy dữ liệu
-  if (isFetchingData) {
-    console.log("Dữ liệu đang được lấy, vui lòng đợi...");
-    return null;
-  }
-
-  try {
-    let iframe = getIframe();
+function observeIframe() {
+  return new Promise((resolve, reject) => {
+    // Kiểm tra xem iframe đã tồn tại sẵn chưa
+    let iframe =
+      document.getElementsByTagName("iframe")[0] ||
+      document.querySelector("iframe");
     if (iframe) {
-      return parseUserData(iframe.src || "");
+      console.log("Iframe đã có sẵn:", iframe);
+      resolve(iframe); // Trả về iframe nếu tìm thấy ngay lập tức
     }
-    isFetchingData = true; // Đặt cờ khi bắt đầu lấy dữ liệu
 
+    // Tạo observer để theo dõi sự thay đổi trong DOM
+    const observer = new MutationObserver(function (mutationsList) {
+      const iframes = document.getElementsByTagName("iframe");
+      if (iframes.length > 0) {
+        console.log("Iframe được tìm thấy:", iframes[0]);
+        observer.disconnect(); // Ngừng quan sát sau khi tìm thấy iframe
+        resolve(iframes[0]); // Resolve với iframe được tìm thấy
+      }
+    });
+
+    // Bắt đầu quan sát DOM
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    // Đặt timeout để tránh đợi vô hạn nếu iframe không bao giờ xuất hiện
+    setTimeout(() => {
+      observer.disconnect(); // Ngắt quan sát
+      reject(null);
+    }, 10000); // Thời gian chờ 30 giây
+  });
+}
+
+async function gettgWebAppData() {
+  try {
     await sleep(10000);
     const lauchButton = document.querySelector(".new-message-bot-commands");
-    if (!lauchButton) {
-      console.log("Không tìm thấy lauchButton");
-      iframe = getIframe();
-      if (iframe) {
-        return parseUserData(iframe.src || "");
-      }
-      return null;
-    }
 
-    lauchButton.dispatchEvent(
+    lauchButton?.dispatchEvent(
       new MouseEvent("click", {
         view: window,
         bubbles: true,
         cancelable: true,
       })
     );
-
-    await sleep(5000);
-    iframe = getIframe();
+    iframe = await observeIframe();
     if (iframe) {
       return parseUserData(iframe.src || "");
     } else {
@@ -249,18 +256,22 @@ async function gettgWebAppData() {
   } catch (error) {
     console.error("Error:", error);
     return null;
-  } finally {
-    isFetchingData = false; // Đặt cờ về false khi hoàn thành việc lấy dữ liệu
   }
 }
 
-async function processStatus(tgWebAppData) {
+async function processPaint() {
   console.log("Bắt đầu tô màu.");
+  let tgWebAppData = await gettgWebAppData();
+
   while (true) {
+    if (!tgWebAppData) {
+      tgWebAppData = await gettgWebAppData();
+      continue;
+    }
+
     let statusInfo = await getStatusUser(tgWebAppData);
     if (!statusInfo) {
       reloadIframe();
-      return;
     }
 
     for (let i = statusInfo.charges; i > 0; i--) {
@@ -277,22 +288,9 @@ async function processStatus(tgWebAppData) {
     statusInfo = await getStatusUser(tgWebAppData);
     if (!statusInfo) {
       reloadIframe();
-      return;
     }
 
     await sleep(statusInfo.reChargeTimer);
-  }
-}
-
-async function main() {
-  const tgWebAppData = await gettgWebAppData();
-  if (tgWebAppData) {
-    console.log("Dữ liệu lấy được:", tgWebAppData);
-    await processStatus(tgWebAppData);
-  } else {
-    console.log(
-      "Không có dữ liệu tgWebAppData hoặc đang trong quá trình lấy dữ liệu"
-    );
   }
 }
 
@@ -306,6 +304,7 @@ async function handleClaimPX() {
     console.info(`Claim $PX thành công: ${claim.claimed}`);
   } else {
     reloadIframe();
+    return;
   }
 }
 
@@ -317,5 +316,5 @@ function scheduleClaimPX() {
   }, 1000 * 65); // Lặp lại sau mỗi 65 giây
 }
 
-main();
+processPaint();
 scheduleClaimPX();
