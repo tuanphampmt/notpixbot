@@ -135,24 +135,18 @@ async function httpRequest(method, url, data, userData) {
     options.body = JSON.stringify(data); // fetch yêu cầu body là chuỗi JSON
   }
 
-  try {
-    const response = await fetch(url, options);
+  const response = await fetch(url, options);
 
-    // Kiểm tra phản hồi từ server
-    if (!response.ok) {
-      const errorMessage = `Không thể Call API ${method}:${pathname}:${response.status} || ${response.statusText}`;
-      console.error(errorMessage);
-      throw new Error(errorMessage);
-    }
-
-    // Trả về dữ liệu dưới dạng JSON
-    const result = await response.json();
-    return result;
-  } catch (error) {
-    const errorMessage = error?.message || "Có lỗi xảy ra khi gọi API";
-    console.error(`Lỗi: ${errorMessage}`);
-    return null;
+  // Kiểm tra phản hồi từ server
+  if (!response.ok) {
+    const errorMessage = `Không thể Call API ${method}:${pathname}:${response.status} || ${response.statusText}`;
+    console.error(errorMessage);
+    throw new Error(errorMessage);
   }
+
+  // Trả về dữ liệu dưới dạng JSON
+  const result = await response.json();
+  return result;
 }
 
 function sleep(ms) {
@@ -171,7 +165,10 @@ async function getStatusUser(userData) {
     );
     return response;
   } catch (error) {
-    return null;
+    if (error.message.includes("401")) {
+      return 401;
+    }
+    return 500;
   }
 }
 
@@ -185,7 +182,10 @@ async function getPixelColor(userData, pixelId) {
     );
     return response?.pixel;
   } catch (error) {
-    return null;
+    if (error.message.includes("401")) {
+      return 401;
+    }
+    return 500;
   }
 }
 
@@ -202,7 +202,10 @@ async function getStartRepaint(userData, id) {
     );
     return response;
   } catch (error) {
-    return null;
+    if (error.message.includes("401")) {
+      return 401;
+    }
+    return 500;
   }
 }
 
@@ -216,7 +219,10 @@ async function claimPX(userData) {
     );
     return response;
   } catch (error) {
-    return null;
+    if (error.message.includes("401")) {
+      return 401;
+    }
+    return 500;
   }
 }
 
@@ -306,10 +312,15 @@ async function processPaint() {
     }
 
     let statusInfo = await getStatusUser(tgWebAppData);
-    if (!statusInfo) {
+    if (statusInfo === 401) {
+      reloadIframe();
+      return;
+    } else if (statusInfo === 500) {
       retryCount++;
       console.log("Không tìm thấy user. Retry lần: ", retryCount);
+      continue;
     }
+
     let userBalance = statusInfo.userBalance;
     for (let i = statusInfo.charges; i > 0; i--) {
       let checkPaint = false; // Cờ để kiểm tra xem có pixel nào được sơn màu không
@@ -317,12 +328,23 @@ async function processPaint() {
       for (let j = 0; j < pixelIds.length; j++) {
         const pixel = await getPixelColor(tgWebAppData, pixelIds[j]);
 
+        if (pixel === 401) {
+          reloadIframe();
+          return;
+        } else if (pixel === 500) {
+          continue;
+        }
+        console.log(`Màu: ${pixel?.color}, Tọa độ ${pixel?.id}`);
         if (pixel?.color && pixel?.color !== "#000000") {
           console.info(`Số lần tô màu còn lại: ${i}`);
 
           const result = await getStartRepaint(tgWebAppData, pixel?.id);
+          if (result === 401 || result === 500) {
+            await sleep(5000);
+            continue;
+          }
 
-          if (result && result.balance) {
+          if (result.balance) {
             console.info(
               `
                - Bạn đã tô màu thành công:
@@ -335,7 +357,7 @@ async function processPaint() {
             break; // Ngừng vòng lặp nếu đã sơn màu thành công
           }
         }
-        await sleep(2000);
+        await sleep(5000);
       }
 
       if (!checkPaint) {
@@ -348,9 +370,14 @@ async function processPaint() {
     }
 
     statusInfo = await getStatusUser(tgWebAppData);
-    if (!statusInfo) {
+
+    if (statusInfo === 401) {
+      reloadIframe();
+      return;
+    } else if (statusInfo === 500) {
       retryCount++;
       console.log("Không tìm thấy user. Retry lần: ", retryCount);
+      continue;
     }
 
     await sleep(statusInfo.reChargeTimer);
@@ -366,7 +393,13 @@ async function handleClaimPX() {
 
   console.log("Dữ liệu lấy được:", tgWebAppData);
   const claim = await claimPX(tgWebAppData);
-  if (claim) {
+  if (claim === 400) {
+    reloadIframe();
+    return;
+  } else if (claim === 1) {
+    console.info(`Lỗi claim.`);
+    return;
+  } else {
     console.info(`Claim $PX thành công: ${claim.claimed}`);
   }
 }
