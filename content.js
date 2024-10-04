@@ -298,7 +298,7 @@ async function gettgWebAppData() {
 async function processPaint() {
   console.log("Bắt đầu tô màu.");
   let tgWebAppData = await gettgWebAppData();
-
+  let retryCount = 0;
   while (true) {
     if (!tgWebAppData) {
       tgWebAppData = await gettgWebAppData();
@@ -307,7 +307,8 @@ async function processPaint() {
 
     let statusInfo = await getStatusUser(tgWebAppData);
     if (!statusInfo) {
-      reloadIframe();
+      retryCount++;
+      console.log("Không tìm thấy user. Retry lần: ", retryCount);
     }
     let userBalance = statusInfo.userBalance;
     for (let i = statusInfo.charges; i > 0; i--) {
@@ -348,10 +349,14 @@ async function processPaint() {
 
     statusInfo = await getStatusUser(tgWebAppData);
     if (!statusInfo) {
-      reloadIframe();
+      retryCount++;
+      console.log("Không tìm thấy user. Retry lần: ", retryCount);
     }
 
     await sleep(statusInfo.reChargeTimer);
+    if (retryCount >= 10) {
+      reloadIframe();
+    }
   }
 }
 
@@ -363,9 +368,6 @@ async function handleClaimPX() {
   const claim = await claimPX(tgWebAppData);
   if (claim) {
     console.info(`Claim $PX thành công: ${claim.claimed}`);
-  } else {
-    reloadIframe();
-    return;
   }
 }
 
