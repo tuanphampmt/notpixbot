@@ -33,7 +33,7 @@ const colors = [
   "#000000",
 ];
 
-const pixelIds = [
+const originalPixelIds = [
   472471, 472472, 472473, 472474, 472475, 472476, 472477, 472478, 472479,
   472480, 472481, 472482, 472483, 472484, 472485, 472486, 472487, 472488,
   472489, 472490, 472491, 472492, 472493, 472494, 472495, 472496, 472497,
@@ -55,6 +55,8 @@ const pixelIds = [
   477517, 477518, 477519, 477520, 477521, 477522, 477523, 477524, 477525,
   477526, 477527, 477528,
 ];
+
+let pixelIds = [...originalPixelIds];
 
 const userAgents = [
   // Windows User Agents
@@ -301,8 +303,72 @@ async function gettgWebAppData() {
   }
 }
 
+async function mainLoopPaint(tgWebAppData, userBalance, checkPaint, i) {
+  while (true) {
+    if (pixelIds.length === 0) {
+      console.warn("Mảng pixelIds đã hết phần tử, khôi phục lại từ ban đầu.");
+      pixelIds = [...originalPixelIds]; // Khôi phục lại mảng ban đầu
+    }
+    let pixelId = randomPixelId(); // Lấy ngẫu nhiên pixelId
+    let pixel = await getPixelColor(tgWebAppData, pixelId); // Lấy thông tin màu pixel
+
+    if (pixel === 401) {
+      reloadIframe();
+      return;
+    } else if (pixel === 500) {
+      await sleep(5000);
+      continue;
+    }
+
+    console.log(`Màu: ${pixel?.color}, Tọa độ ${pixel?.id}`);
+
+    // Nếu màu là "#000000", xóa pixelId khỏi mảng
+    if (pixel?.color === "#000000") {
+      const index = pixelIds.indexOf(pixelId);
+      if (index > -1) {
+        pixelIds.splice(index, 1); // Xóa phần tử khỏi mảng
+        console.log(
+          `Đã xóa pixelId: ${pixelId} vì màu là #000000.  Mảng pixelIds còn ${pixelIds.length} phần tử`
+        );
+      }
+      await sleep(5000);
+      continue; // Chuyển sang pixel tiếp theo
+    }
+
+    // Nếu màu không phải là "#000000", khôi phục mảng pixelIds về trạng thái ban đầu
+    if (pixel?.color && pixel?.color !== "#000000") {
+      console.info(`Số lần tô màu còn lại: ${i}`);
+
+      const result = await getStartRepaint(tgWebAppData, pixel?.id);
+      if (result === 401 || result === 500) {
+        await sleep(5000);
+        continue;
+      }
+
+      if (result.balance) {
+        console.info(
+          `
+           - Bạn đã tô màu thành công:
+             + Số điểm nhận đc: ${(result.balance - userBalance).toFixed(1)}
+             + Số dư hiện tại là: ${result.balance.toFixed(1)}
+          `
+        );
+        userBalance = result.balance;
+        checkPaint = true; // Đặt cờ thành true vì có pixel được sơn màu
+        pixelIds = [...originalPixelIds]; // Khôi phục lại mảng ban đầu
+        console.log("Mảng pixelIds đã được khôi phục lại ban đầu.");
+        break; // Ngừng vòng lặp nếu đã sơn màu thành công
+      }
+    }
+    checkPaint = false;
+    await sleep(5000);
+  }
+}
+
 async function processPaint() {
-  console.log("Bắt đầu tô màu.");
+  console.log(
+    "~~~~~~~~~~~~~~~~~~~~~~~~Bắt đầu tô màu nhé ~~~~~~~~~~~~~~~~~~~~~~"
+  );
   let tgWebAppData = await gettgWebAppData();
   let retryCount = 0;
   while (true) {
@@ -325,40 +391,7 @@ async function processPaint() {
     for (let i = statusInfo.charges; i > 0; i--) {
       let checkPaint = false; // Cờ để kiểm tra xem có pixel nào được sơn màu không
 
-      for (let j = 0; j < pixelIds.length; j++) {
-        const pixel = await getPixelColor(tgWebAppData, pixelIds[j]);
-
-        if (pixel === 401) {
-          reloadIframe();
-          return;
-        } else if (pixel === 500) {
-          continue;
-        }
-        console.log(`Màu: ${pixel?.color}, Tọa độ ${pixel?.id}`);
-        if (pixel?.color && pixel?.color !== "#000000") {
-          console.info(`Số lần tô màu còn lại: ${i}`);
-
-          const result = await getStartRepaint(tgWebAppData, pixel?.id);
-          if (result === 401 || result === 500) {
-            await sleep(5000);
-            continue;
-          }
-
-          if (result.balance) {
-            console.info(
-              `
-               - Bạn đã tô màu thành công:
-                 + Số điểm nhận đc: ${result.balance - userBalance}. 
-                 + Số dư hiện tại là: ${result.balance}
-              `
-            );
-            userBalance = result.balance;
-            checkPaint = true; // Đặt cờ thành true vì có pixel được sơn màu
-            break; // Ngừng vòng lặp nếu đã sơn màu thành công
-          }
-        }
-        await sleep(5000);
-      }
+      await mainLoopPaint(tgWebAppData, userBalance, checkPaint, i);
 
       if (!checkPaint) {
         i++; // Không giảm i nếu không pixel nào thỏa điều kiện
@@ -393,10 +426,10 @@ async function handleClaimPX() {
 
   console.log("Dữ liệu lấy được:", tgWebAppData);
   const claim = await claimPX(tgWebAppData);
-  if (claim === 400) {
+  if (claim === 401) {
     reloadIframe();
     return;
-  } else if (claim === 1) {
+  } else if (claim === 500) {
     console.info(`Lỗi claim.`);
     return;
   } else {
