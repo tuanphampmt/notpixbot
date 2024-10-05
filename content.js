@@ -328,7 +328,7 @@ async function mainLoopPaint(tgWebAppData, userBalance, checkPaint, i) {
       if (index > -1) {
         pixelIds.splice(index, 1); // Xóa phần tử khỏi mảng
         console.log(
-          `Đã xóa pixelId: ${pixelId} vì màu là #000000.  Mảng pixelIds còn ${pixelIds.length} phần tử`
+          `Đã xóa pixelId: ${pixelId} vì màu là #000000. Mảng pixelIds còn ${pixelIds.length} phần tử`
         );
       }
       await sleep(5000);
