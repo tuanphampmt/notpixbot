@@ -461,7 +461,7 @@ function scheduleClaimPX() {
   setTimeout(async () => {
     await handleClaimPX();
     scheduleClaimPX(); // Gọi lại để tiếp tục lặp
-  }, 1000 * 65); // Lặp lại sau mỗi 65 giây
+  }, 1000 * 60 * 30); // Lặp lại sau mỗi 30 phut
 }
 
 processPaint();
