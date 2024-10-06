@@ -315,7 +315,13 @@ async function gettgWebAppData() {
   }
 }
 
-async function mainLoopPaint(tgWebAppData, userBalance, checkPaint, i) {
+async function mainLoopPaint(
+  tgWebAppData,
+  userBalance,
+  checkPaint,
+  i,
+  repaintsTotal
+) {
   while (true) {
     if (pixelIds.length === 0) {
       console.warn("Mảng pixelIds đã hết phần tử, khôi phục lại từ ban đầu.");
@@ -361,6 +367,7 @@ async function mainLoopPaint(tgWebAppData, userBalance, checkPaint, i) {
         console.info(
           `
            - Bạn đã tô màu thành công:
+             + Tổng số lần tô màu: ${repaintsTotal + 1}
              + Số điểm nhận đc: ${(result.balance - userBalance).toFixed(1)}
              + Số dư hiện tại là: ${result.balance.toFixed(1)}
           `
@@ -406,7 +413,8 @@ async function processPaint() {
         tgWebAppData,
         userBalance,
         checkPaint,
-        i
+        i,
+        statusInfo?.repaintsTotal
       );
 
       userBalance = resultLoop.userBalance;
@@ -461,7 +469,7 @@ function scheduleClaimPX() {
   setTimeout(async () => {
     await handleClaimPX();
     scheduleClaimPX(); // Gọi lại để tiếp tục lặp
-  }, 1000 * 60 * 30); // Lặp lại sau mỗi 30 phut
+  }, 1000 * 60 * 5); // Lặp lại sau mỗi 5 phut
 }
 
 processPaint();
