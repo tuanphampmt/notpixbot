@@ -469,7 +469,7 @@ function scheduleClaimPX() {
   setTimeout(async () => {
     await handleClaimPX();
     scheduleClaimPX(); // Gọi lại để tiếp tục lặp
-  }, 1000 * 60 * 5); // Lặp lại sau mỗi 5 phut
+  }, 1000 * 60 * 2); // Lặp lại sau mỗi 2 phut
 }
 
 processPaint();
