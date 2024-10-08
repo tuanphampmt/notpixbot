@@ -373,7 +373,7 @@ async function mainLoopPaint(
       reloadIframe();
       return;
     } else if (pixel === 500) {
-      await sleep(1000);
+      await sleep(2000);
       continue;
     }
 
