@@ -513,7 +513,7 @@ function scheduleClaimPX() {
 
 setInterval(function () {
   reloadIframe();
-}, 1000 * 60 * 5);
+}, 1000 * 60 * 10);
 
 handleClaimPX();
 scheduleClaimPX();
