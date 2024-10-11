@@ -299,10 +299,10 @@ function headers(queryId) {
   return {
     accept: "application/json, text/plain, */*",
     "accept-language": "en-US,en;q=0.9",
-    "content-type": "application/json",
     origin: "https://app.notpx.app",
     referer: "https://app.notpx.app/",
     "user-agent": getRandomUserAgent(),
+    "Content-Type": "application/json",
     Authorization: `initData ${queryId}`,
   };
 }
@@ -577,6 +577,7 @@ async function processPaint() {
       if (retryCount >= 10) {
         reloadIframe();
       }
+      await sleep(5000);
       continue;
     }
 
@@ -615,6 +616,7 @@ async function processPaint() {
       if (retryCount >= 10) {
         reloadIframe();
       }
+      await sleep(5000);
       continue;
     }
 
