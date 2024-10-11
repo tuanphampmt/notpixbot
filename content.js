@@ -33,6 +33,7 @@ const colors = [
   "#000000",
 ];
 
+const rootColor = "#000000";
 // const originalPixelIds = [
 //   [
 //     472513, 473513, 474513, 475513, 476513, 477513, 478513, 479513, 480513,
@@ -381,7 +382,7 @@ async function getStartRepaint(userData, id) {
       "https://notpx.app/api/v1/repaint/start",
       {
         pixelId: id,
-        newColor: "#2450A4",
+        newColor: rootColor,
       },
       userData
     );
@@ -512,12 +513,12 @@ async function mainLoopPaint(
     console.log(`Màu: ${pixel?.color}, Tọa độ ${pixel?.id}`);
 
     // Nếu màu là "#000000", xóa pixelId khỏi mảng
-    if (pixel?.color === "#000000") {
+    if (pixel?.color === rootColor) {
       const index = pixelIds.indexOf(pixelId);
       if (index > -1) {
         pixelIds.splice(index, 1); // Xóa phần tử khỏi mảng
         console.log(
-          `Đã xóa pixelId: ${pixelId} vì màu là #000000. Mảng pixelIds còn ${pixelIds.length} phần tử`
+          `Đã xóa pixelId: ${pixelId} vì màu là ${rootColor}. Mảng pixelIds còn ${pixelIds.length} phần tử`
         );
       }
       await sleep(1000);
@@ -525,7 +526,7 @@ async function mainLoopPaint(
     }
 
     // Nếu màu không phải là "#000000", khôi phục mảng pixelIds về trạng thái ban đầu
-    if (pixel?.color && pixel?.color !== "#000000") {
+    if (pixel?.color && pixel?.color !== rootColor) {
       console.info(`Số lần tô màu còn lại: ${i}`);
 
       const result = await getStartRepaint(tgWebAppData, pixel?.id);
