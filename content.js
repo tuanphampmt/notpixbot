@@ -283,7 +283,7 @@ async function httpRequest(method, url, data, userData) {
   // Kiểm tra phản hồi từ server
   if (!response.ok) {
     const errorMessage = `Không thể Call API ${method}:${pathname}:${response.status} || ${response.statusText}`;
-    console.error(errorMessage);
+    logError(errorMessage);
     throw new Error(errorMessage);
   }
 
@@ -294,7 +294,7 @@ async function httpRequest(method, url, data, userData) {
 
 function sleep(ms) {
   // Chờ thời gian reCharge trước khi lặp lại chu kỳ
-  console.info(`Bạn phải chờ ${ms / 1000} giây để tiếp tục`);
+  logInfo(`Bạn phải chờ ${ms / 1000} giây để tiếp tục`);
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
@@ -310,6 +310,10 @@ async function getStatusUser(userData) {
   } catch (error) {
     if (error.message.includes("401")) {
       return 401;
+    }
+
+    if (error.message.includes("400")) {
+      return 400;
     }
     return 500;
   }
@@ -327,6 +331,10 @@ async function getPixelColor(userData, pixelId) {
   } catch (error) {
     if (error.message.includes("401")) {
       return 401;
+    }
+
+    if (error.message.includes("400")) {
+      return 400;
     }
     return 500;
   }
@@ -348,6 +356,10 @@ async function getStartRepaint(userData, id) {
     if (error.message.includes("401")) {
       return 401;
     }
+
+    if (error.message.includes("400")) {
+      return 400;
+    }
     return 500;
   }
 }
@@ -364,6 +376,10 @@ async function claimPX(userData) {
   } catch (error) {
     if (error.message.includes("401")) {
       return 401;
+    }
+
+    if (error.message.includes("400")) {
+      return 400;
     }
     return 500;
   }
@@ -394,7 +410,7 @@ function observeIframe() {
       document.getElementsByTagName("iframe")[0] ||
       document.querySelector("iframe");
     if (iframe) {
-      console.log("Iframe đã có sẵn:", iframe);
+      logInfo("Iframe đã có sẵn: ", iframe);
       resolve(iframe); // Trả về iframe nếu tìm thấy ngay lập tức
     }
 
@@ -402,7 +418,7 @@ function observeIframe() {
     const observer = new MutationObserver(function (mutationsList) {
       const iframes = document.getElementsByTagName("iframe");
       if (iframes.length > 0) {
-        console.log("Iframe được tìm thấy:", iframes[0]);
+        logInfo("Iframe được tìm thấy:", iframes[0]);
         observer.disconnect(); // Ngừng quan sát sau khi tìm thấy iframe
         resolve(iframes[0]); // Resolve với iframe được tìm thấy
       }
@@ -435,13 +451,25 @@ async function gettgWebAppData() {
     if (iframe) {
       return parseUserData(iframe.src || "");
     } else {
-      console.log("Không tìm thấy iframe.");
+      logError("Không tìm thấy iframe.");
       return null;
     }
   } catch (error) {
-    console.error("Error:", error);
+    logError("Error:", error);
     return null;
   }
+}
+
+function logInfo(message, value) {
+  console.log(`%c${message}`, "color: green; font-size: 17px;", value || "");
+}
+
+function logError(message, value) {
+  console.log(`%c${message}`, "color: red; font-size: 17px;", value || "");
+}
+
+function logWarning(message, value) {
+  console.log(`%c${message}`, "color: blue; font-size: 17px;", value || "");
 }
 
 async function mainLoopPaint(
@@ -449,75 +477,86 @@ async function mainLoopPaint(
   userBalance,
   checkPaint,
   i,
-  repaintsTotal
+  repaintsTotal,
+  charges
 ) {
-  while (true) {
-    if (pixelIds.length === 0) {
-      console.warn("Mảng pixelIds đã hết phần tử, khôi phục lại từ ban đầu.");
-      pixelIds = [...originalPixelIds]; // Khôi phục lại mảng ban đầu
-    }
-    let pixelId = randomPixelId(); // Lấy ngẫu nhiên pixelId
-    let pixel = await getPixelColor(tgWebAppData, pixelId); // Lấy thông tin màu pixel
+  if (pixelIds.length === 0) {
+    logWarning("Mảng pixelIds đã hết phần tử, khôi phục lại từ ban đầu.");
+    pixelIds = [...originalPixelIds]; // Khôi phục lại mảng ban đầu
+  }
+  let pixelId = randomPixelId(); // Lấy ngẫu nhiên pixelId
+  let pixel = await getPixelColor(tgWebAppData, pixelId); // Lấy thông tin màu pixel
 
-    if (pixel === 401) {
+  if (pixel === 401 || pixel === 400) {
+    reloadIframe();
+    return;
+  } else if (pixel === 500) {
+    checkPaint = false;
+    return { userBalance, checkPaint };
+  }
+
+  logInfo(`Màu: ${pixel?.color}, Tọa độ ${pixel?.id}`);
+
+  // Nếu màu là "#000000", xóa pixelId khỏi mảng
+  if (pixel?.color === rootColor) {
+    const index = pixelIds.indexOf(pixelId);
+    if (index > -1) {
+      pixelIds.splice(index, 1); // Xóa phần tử khỏi mảng
+      logWarning(
+        `Đã xóa pixelId: ${pixelId} vì không phải màu ${rootColor}. Mảng pixelIds còn ${pixelIds.length} phần tử`
+      );
+    }
+    checkPaint = false;
+    return { userBalance, checkPaint };
+  }
+
+  // Nếu màu không phải là "#000000", khôi phục mảng pixelIds về trạng thái ban đầu
+  if (pixel?.color && pixel?.color !== rootColor) {
+    const result = await getStartRepaint(tgWebAppData, pixel?.id);
+
+    if (result === 401) {
       reloadIframe();
       return;
-    } else if (pixel === 500) {
-      await sleep(5000);
-      continue;
+    } else if (result === 400) {
+      checkPaint = false;
+      let statusInfo = await getStatusUser(tgWebAppData);
+      charges = statusInfo.charges;
+      return { userBalance, checkPaint, charges };
+    } else if (result === 500) {
+      checkPaint = false;
+      return { userBalance, checkPaint };
     }
 
-    console.log(`Màu: ${pixel?.color}, Tọa độ ${pixel?.id}`);
-
-    // Nếu màu là "#000000", xóa pixelId khỏi mảng
-    if (pixel?.color === rootColor) {
-      const index = pixelIds.indexOf(pixelId);
-      if (index > -1) {
-        pixelIds.splice(index, 1); // Xóa phần tử khỏi mảng
-        console.log(
-          `Đã xóa pixelId: ${pixelId} vì màu là ${rootColor}. Mảng pixelIds còn ${pixelIds.length} phần tử`
-        );
-      }
-      await sleep(1000);
-      continue; // Chuyển sang pixel tiếp theo
-    }
-
-    // Nếu màu không phải là "#000000", khôi phục mảng pixelIds về trạng thái ban đầu
-    if (pixel?.color && pixel?.color !== rootColor) {
-      console.info(`Số lần tô màu còn lại: ${i}`);
-
-      const result = await getStartRepaint(tgWebAppData, pixel?.id);
-      if (result === 401 || result === 500) {
-        await sleep(1000);
-        continue;
-      }
-
-      if (result.balance) {
-        console.info(
-          `
+    if (result.balance) {
+      const rewards = (result.balance - userBalance).toFixed(1);
+      logInfo(
+        `
            - Bạn đã tô màu thành công:
-             + Tổng số lần tô màu: ${repaintsTotal + 1}
-             + Số điểm nhận đc: ${(result.balance - userBalance).toFixed(1)}
+             + Số lần tô màu còn lại: ${i - 1}
+             + Tổng số lần bạn đã tô màu: ${repaintsTotal + 1}
+             + Số điểm nhận đc: ${rewards}
              + Số dư hiện tại là: ${result.balance.toFixed(1)}
           `
-        );
-        userBalance = result.balance;
-        checkPaint = true; // Đặt cờ thành true vì có pixel được sơn màu
-        pixelIds = [...originalPixelIds]; // Khôi phục lại mảng ban đầu
-        console.log("Mảng pixelIds đã được khôi phục lại ban đầu.");
-        return { userBalance, checkPaint };
-      }
+      );
+
+      userBalance = result.balance;
+      checkPaint = true; // Đặt cờ thành true vì có pixel được sơn màu
+      pixelIds = [...originalPixelIds]; // Khôi phục lại mảng ban đầu
+      logInfo("Mảng pixelIds đã được khôi phục lại ban đầu.");
+      return { userBalance, checkPaint };
     }
-    await sleep(1000);
+    checkPaint = false;
+    return { userBalance, checkPaint };
   }
+  return { userBalance, checkPaint };
 }
 
 async function processPaint() {
-  console.log(
-    "~~~~~~~~~~~~~~~~~~~~~~~~Bắt đầu tô màu nhé ~~~~~~~~~~~~~~~~~~~~~~"
-  );
+  logInfo("######## Bắt đầu tô màu nhé ##########");
+
   let tgWebAppData = await gettgWebAppData();
   let retryCount = 0;
+
   while (true) {
     if (!tgWebAppData) {
       tgWebAppData = await gettgWebAppData();
@@ -525,13 +564,13 @@ async function processPaint() {
     }
 
     let statusInfo = await getStatusUser(tgWebAppData);
-    if (statusInfo === 401) {
+    if (statusInfo === 401 || statusInfo === 400) {
       reloadIframe();
       return;
     } else if (statusInfo === 500) {
       retryCount++;
-      console.log("Không tìm thấy user. Retry lần: ", retryCount);
-      if (retryCount >= 10) {
+      logError("Không tìm thấy user. Retry lần: ", retryCount);
+      if (retryCount > 5) {
         reloadIframe();
       }
       await sleep(5000);
@@ -539,7 +578,9 @@ async function processPaint() {
     }
 
     let userBalance = statusInfo.userBalance;
-    for (let i = statusInfo.charges; i > 0; i--) {
+    logInfo(`Tổng số lần tô màu của bạn là: ${statusInfo.charges}`);
+    let charges = statusInfo.charges;
+    for (let i = charges; i > 0; i--) {
       let checkPaint = false; // Cờ để kiểm tra xem có pixel nào được sơn màu không
 
       const resultLoop = await mainLoopPaint(
@@ -547,38 +588,48 @@ async function processPaint() {
         userBalance,
         checkPaint,
         i,
-        statusInfo?.repaintsTotal
+        statusInfo?.repaintsTotal,
+        charges
       );
 
       userBalance = resultLoop.userBalance;
       checkPaint = resultLoop.checkPaint;
+      if (resultLoop.charges) {
+        logWarning(
+          `Lấy lại thông tin user, khi đó tổng số lần tô màu mới nhất là: ${resultLoop.charges}`
+        );
+        charges = resultLoop.charges;
+      }
 
       if (!checkPaint) {
         i++; // Không giảm i nếu không pixel nào thỏa điều kiện
       }
 
-      if (i !== 1 && checkPaint) {
-        await sleep(1000); // Nghỉ 2 giây giữa các lần tô màu
+      if (i !== 1 || checkPaint) {
+        await sleep(2000); // Nghỉ 2 giây giữa các lần tô màu
       }
     }
 
     statusInfo = await getStatusUser(tgWebAppData);
 
-    if (statusInfo === 401) {
+    if (statusInfo === 401 || statusInfo === 400) {
       reloadIframe();
       return;
     } else if (statusInfo === 500) {
       retryCount++;
-      console.log("Không tìm thấy user. Retry lần: ", retryCount);
-      if (retryCount >= 10) {
+      logError("Không tìm thấy user. Retry lần: ", retryCount);
+      if (retryCount > 5) {
         reloadIframe();
       }
       await sleep(5000);
       continue;
     }
 
-    await sleep(statusInfo.reChargeTimer);
-    if (retryCount >= 10) {
+    if (statusInfo.charges === 0) {
+      await sleep(statusInfo.reChargeTimer);
+    }
+
+    if (retryCount > 5) {
       reloadIframe();
     }
   }
@@ -588,16 +639,16 @@ async function handleClaimPX() {
   let tgWebAppData = await gettgWebAppData();
   if (!tgWebAppData) return null;
 
-  console.log("Dữ liệu lấy được:", tgWebAppData);
+  logInfo("Dữ liệu lấy được:", tgWebAppData);
   const claim = await claimPX(tgWebAppData);
-  if (claim === 401) {
+  if (claim === 401 || claim === 400) {
     reloadIframe();
     return;
   } else if (claim === 500) {
-    console.info(`Lỗi claim.`);
+    logError(`Lỗi claim.`);
     return;
   } else {
-    console.info(`Claim $PX thành công: ${claim.claimed}`);
+    logInfo(`Claim $PX thành công: ${claim.claimed}`);
   }
 }
 
