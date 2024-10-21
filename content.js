@@ -362,6 +362,47 @@ async function getStatusUser(userData) {
   }
 }
 
+async function reChargeSpeed(userData) {
+  try {
+    const response = await httpRequest(
+      "GET",
+      "https://notpx.app/api/v1/mining/boost/check/reChargeSpeed",
+      null,
+      userData
+    );
+    return response;
+  } catch (error) {
+    if (error.message.includes("401")) {
+      return 401;
+    }
+
+    if (error.message.includes("400")) {
+      return 400;
+    }
+    return 500;
+  }
+}
+async function energyLimit(userData) {
+  try {
+    const response = await httpRequest(
+      "GET",
+      "https://notpx.app/api/v1/mining/boost/check/energyLimit",
+      null,
+      userData
+    );
+    return response;
+  } catch (error) {
+    if (error.message.includes("401")) {
+      return 401;
+    }
+
+    if (error.message.includes("400")) {
+      return 400;
+    }
+    return 500;
+  }
+}
+
 async function getPixelColor(userData, pixelId) {
   try {
     const response = await httpRequest(
@@ -694,6 +735,63 @@ async function handleClaimPX() {
     logInfo(`Claim $PX thành công: ${claim.claimed}`);
   }
 }
+// https://notpx.app/api/v1/mining/boost/check/energyLimit
+// energyLimit;
+
+async function handleReChargeSpeed() {
+  let tgWebAppData = await gettgWebAppData();
+
+  if (!tgWebAppData) return null;
+
+  logInfo("Dữ liệu lấy được:", tgWebAppData);
+
+  let statusInfo = await getStatusUser(tgWebAppData);
+  if (statusInfo === 401 || statusInfo === 400 || statusInfo === 500) {
+    return;
+  }
+
+  if (statusInfo && statusInfo.reChargeSpeed === 300000) {
+    logInfo(`ReChargeSpeed max level`);
+    return;
+  }
+
+  for (let i = 0; i < 10; i++) {
+    const speed = await reChargeSpeed(tgWebAppData);
+    if (speed === 401 || speed === 400 || speed === 500) {
+      break;
+    } else if (speed.reChargeSpeed) {
+      logInfo(`ReChargeSpeed thành công`);
+      await sleep(10000);
+    }
+  }
+}
+
+async function handleEnergyLimit() {
+  let tgWebAppData = await gettgWebAppData();
+  if (!tgWebAppData) return null;
+
+  logInfo("Dữ liệu lấy được:", tgWebAppData);
+
+  let statusInfo = await getStatusUser(tgWebAppData);
+
+  if (statusInfo === 401 || statusInfo === 400 || statusInfo === 500) {
+    return;
+  }
+  if (statusInfo && statusInfo.maxCharges === 24) {
+    logInfo(`Energy limit max level`);
+    return;
+  }
+
+  for (let i = 0; i < 10; i++) {
+    const limit = await energyLimit(tgWebAppData);
+    if (limit === 401 || limit === 400 || limit === 500) {
+      break;
+    } else if (limit.energyLimit) {
+      logInfo(`EnergyLimit thành công`);
+      await sleep(10000);
+    }
+  }
+}
 
 // // Thay thế setInterval bằng setTimeout để tự động điều chỉnh thời gian chờ
 function scheduleClaimPX() {
@@ -703,10 +801,8 @@ function scheduleClaimPX() {
   }, 1000 * 60 * 2); // Lặp lại sau mỗi 2 phut
 }
 
-// setInterval(function () {
-//   reloadIframe();
-// }, 1000 * 60 * 10);
-
+handleEnergyLimit();
+handleReChargeSpeed();
 handleClaimPX();
 scheduleClaimPX();
 processPaint();
