@@ -403,6 +403,27 @@ async function energyLimit(userData) {
   }
 }
 
+async function paintReward(userData) {
+  try {
+    const response = await httpRequest(
+      "GET",
+      "https://notpx.app/api/v1/mining/boost/check/paintReward",
+      null,
+      userData
+    );
+    return response;
+  } catch (error) {
+    if (error.message.includes("401")) {
+      return 401;
+    }
+
+    if (error.message.includes("400")) {
+      return 400;
+    }
+    return 500;
+  }
+}
+
 async function getPixelColor(userData, pixelId) {
   try {
     const response = await httpRequest(
@@ -735,8 +756,6 @@ async function handleClaimPX() {
     logInfo(`Claim $PX thành công: ${claim.claimed}`);
   }
 }
-// https://notpx.app/api/v1/mining/boost/check/energyLimit
-// energyLimit;
 
 async function handleReChargeSpeed() {
   let tgWebAppData = await gettgWebAppData();
@@ -750,8 +769,8 @@ async function handleReChargeSpeed() {
     return;
   }
 
-  if (statusInfo && statusInfo.reChargeSpeed === 300000) {
-    logInfo(`ReChargeSpeed max level`);
+  if (statusInfo && statusInfo?.boosts?.reChargeSpeed === 11) {
+    logInfo(`ReChargeSpeed max level 11`);
     return;
   }
 
@@ -777,8 +796,8 @@ async function handleEnergyLimit() {
   if (statusInfo === 401 || statusInfo === 400 || statusInfo === 500) {
     return;
   }
-  if (statusInfo && statusInfo.maxCharges === 24) {
-    logInfo(`Energy limit max level`);
+  if (statusInfo && statusInfo?.boosts?.energyLimit === 7) {
+    logInfo(`Energy limit max level 7`);
     return;
   }
 
@@ -793,6 +812,42 @@ async function handleEnergyLimit() {
   }
 }
 
+async function handlePaintReward() {
+  let tgWebAppData = await gettgWebAppData();
+  if (!tgWebAppData) return null;
+
+  logInfo("Dữ liệu lấy được:", tgWebAppData);
+
+  let statusInfo = await getStatusUser(tgWebAppData);
+
+  if (statusInfo === 401 || statusInfo === 400 || statusInfo === 500) {
+    return;
+  }
+  if (statusInfo && statusInfo?.boosts?.paintReward === 5) {
+    logInfo(`PaintReward đã đạt level 5`);
+    return;
+  }
+
+  for (let i = 0; i < 10; i++) {
+    const reward = await paintReward(tgWebAppData);
+    if (reward === 401 || reward === 400 || reward === 500) {
+      break;
+    } else if (reward.paintReward) {
+      logInfo(`PaintReward thành công`);
+      let statusInfo = await getStatusUser(tgWebAppData);
+
+      if (statusInfo === 401 || statusInfo === 400 || statusInfo === 500) {
+        break;
+      }
+      if (statusInfo && statusInfo?.boosts?.paintReward === 5) {
+        logInfo(`PaintReward đã đạt level 5`);
+        break;
+      }
+      await sleep(10000);
+    }
+  }
+}
+
 // // Thay thế setInterval bằng setTimeout để tự động điều chỉnh thời gian chờ
 function scheduleClaimPX() {
   setTimeout(async () => {
@@ -801,6 +856,7 @@ function scheduleClaimPX() {
   }, 1000 * 60 * 2); // Lặp lại sau mỗi 2 phut
 }
 
+handlePaintReward();
 handleEnergyLimit();
 handleReChargeSpeed();
 handleClaimPX();
