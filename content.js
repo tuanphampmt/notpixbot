@@ -382,6 +382,28 @@ async function reChargeSpeed(userData) {
     return 500;
   }
 }
+
+async function startTask(userData, suburl) {
+  try {
+    const response = await httpRequest(
+      "GET",
+      `https://notpx.app/api/v1/mining/task/check/${suburl}`,
+      null,
+      userData
+    );
+    return response;
+  } catch (error) {
+    if (error.message.includes("401")) {
+      return 401;
+    }
+
+    if (error.message.includes("400")) {
+      return 400;
+    }
+    return 500;
+  }
+}
+
 async function energyLimit(userData) {
   try {
     const response = await httpRequest(
@@ -515,7 +537,7 @@ function observeIframe() {
       document.getElementsByTagName("iframe")[0] ||
       document.querySelector("iframe");
     if (iframe) {
-      logInfo("Iframe đã có sẵn: ", iframe);
+      // logInfo("Iframe đã có sẵn: ", iframe);
       resolve(iframe); // Trả về iframe nếu tìm thấy ngay lập tức
     }
 
@@ -523,7 +545,7 @@ function observeIframe() {
     const observer = new MutationObserver(function (mutationsList) {
       const iframes = document.getElementsByTagName("iframe");
       if (iframes.length > 0) {
-        logInfo("Iframe được tìm thấy:", iframes[0]);
+        // logInfo("Iframe được tìm thấy:", iframes[0]);
         observer.disconnect(); // Ngừng quan sát sau khi tìm thấy iframe
         resolve(iframes[0]); // Resolve với iframe được tìm thấy
       }
@@ -554,6 +576,7 @@ async function gettgWebAppData() {
     );
     iframe = await observeIframe();
     if (iframe) {
+      logInfo("Dữ liệu lấy được:", parseUserData(iframe.src || ""));
       return parseUserData(iframe.src || "");
     } else {
       logError("Không tìm thấy iframe.");
@@ -744,7 +767,6 @@ async function handleClaimPX() {
   let tgWebAppData = await gettgWebAppData();
   if (!tgWebAppData) return null;
 
-  logInfo("Dữ liệu lấy được:", tgWebAppData);
   const claim = await claimPX(tgWebAppData);
   if (claim === 401 || claim === 400) {
     reloadIframe();
@@ -761,8 +783,6 @@ async function handleReChargeSpeed() {
   let tgWebAppData = await gettgWebAppData();
 
   if (!tgWebAppData) return null;
-
-  logInfo("Dữ liệu lấy được:", tgWebAppData);
 
   let statusInfo = await getStatusUser(tgWebAppData);
   if (statusInfo === 401 || statusInfo === 400 || statusInfo === 500) {
@@ -789,8 +809,6 @@ async function handleEnergyLimit() {
   let tgWebAppData = await gettgWebAppData();
   if (!tgWebAppData) return null;
 
-  logInfo("Dữ liệu lấy được:", tgWebAppData);
-
   let statusInfo = await getStatusUser(tgWebAppData);
 
   if (statusInfo === 401 || statusInfo === 400 || statusInfo === 500) {
@@ -816,15 +834,13 @@ async function handlePaintReward() {
   let tgWebAppData = await gettgWebAppData();
   if (!tgWebAppData) return null;
 
-  logInfo("Dữ liệu lấy được:", tgWebAppData);
-
   let statusInfo = await getStatusUser(tgWebAppData);
 
   if (statusInfo === 401 || statusInfo === 400 || statusInfo === 500) {
     return;
   }
-  if (statusInfo && statusInfo?.boosts?.paintReward === 5) {
-    logInfo(`PaintReward đã đạt level 5`);
+  if (statusInfo && statusInfo?.boosts?.paintReward > 4) {
+    logInfo(`PaintReward đã đạt level ${statusInfo?.boosts?.paintReward}`);
     return;
   }
 
@@ -839,11 +855,63 @@ async function handlePaintReward() {
       if (statusInfo === 401 || statusInfo === 400 || statusInfo === 500) {
         break;
       }
-      if (statusInfo && statusInfo?.boosts?.paintReward === 5) {
-        logInfo(`PaintReward đã đạt level 5`);
+      if (statusInfo && statusInfo?.boosts?.paintReward > 4) {
+        logInfo(`PaintReward đã đạt level ${statusInfo?.boosts?.paintReward}`);
         break;
       }
       await sleep(10000);
+    }
+  }
+}
+
+async function handleTask(key, tgWebAppData, specialTaskMap) {
+  let start_task = await startTask(tgWebAppData, key);
+  if (
+    start_task[key] ||
+    (specialTaskMap[key] && start_task[specialTaskMap[key]])
+  ) {
+    logInfo(`Hoàn thành task ${key}`);
+    await sleep(5000);
+  }
+}
+
+async function handleTasks() {
+  logInfo(`Bắt đầu làm nhiệm vụ...`);
+  let tgWebAppData = await gettgWebAppData();
+  if (!tgWebAppData) return null;
+
+  let statusInfo = await getStatusUser(tgWebAppData);
+
+  if (statusInfo === 401 || statusInfo === 400 || statusInfo === 500) {
+    return;
+  }
+  let tasks = [
+    "boinkTask",
+    "jettonTask",
+    "joinSquad",
+    "leagueBonusGold",
+    "leagueBonusPlatinum",
+    "leagueBonusSilver",
+    "makePixelAvatar",
+    "paint20pixels",
+    "x?name=notpixel",
+    "x?name=notcoin",
+  ];
+
+  const specialTasks = ["x?name=notpixel", "x?name=notcoin"];
+  const specialTaskMap = {
+    "x?name=notpixel": "x:notpixel",
+    "x?name=notcoin": "x:notcoin",
+  };
+
+  for (const key of tasks) {
+    if (!statusInfo.tasks[key]) {
+      await handleTask(key, tgWebAppData, specialTaskMap);
+    } else if (specialTasks.includes(key)) {
+      let mappedKey = specialTaskMap[key];
+      if (!statusInfo.tasks[mappedKey]) {
+        await handleTask(key, tgWebAppData, specialTaskMap);
+      }
     }
   }
 }
@@ -856,9 +924,27 @@ function scheduleClaimPX() {
   }, 1000 * 60 * 2); // Lặp lại sau mỗi 2 phut
 }
 
-handlePaintReward();
+let count = 0;
+const maxCount = 1;
+
+const intervalId = setInterval(async () => {
+  count++;
+  logInfo(`Đây là lần gọi thứ ${count} để buff boots`);
+
+  await handleEnergyLimit();
+  await handleReChargeSpeed();
+  await handlePaintReward();
+
+  if (count >= maxCount) {
+    clearInterval(intervalId);
+    logInfo("Đã hoàn thành 5 lần gọi để buff boots.");
+  }
+}, 1000 * 60 * 2); // 2 phút
+
+handleTasks();
 handleEnergyLimit();
 handleReChargeSpeed();
+handlePaintReward();
 handleClaimPX();
 scheduleClaimPX();
 processPaint();
