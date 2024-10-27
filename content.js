@@ -654,8 +654,8 @@ async function handleReChargeSpeed() {
     return;
   }
 
-  if (statusInfo && statusInfo?.boosts?.reChargeSpeed === 7) {
-    logInfo(`ReChargeSpeed đạt level 7`);
+  if (statusInfo && statusInfo?.boosts?.reChargeSpeed >= 7) {
+    logInfo(`ReChargeSpeed đạt level lớn hơn 7`);
     return;
   }
 
