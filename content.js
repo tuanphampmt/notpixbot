@@ -46,198 +46,39 @@ const colors = [
   "#000000",
 ];
 
-const rootColor = "#000000";
-// const originalPixelIds = [
-//   generateArray(471513, 511513, 1000, []),
-//   generateArray(472512, 511512, 1000, []),
-//   generateArray(472511, 512511, 1000, []),
-//   generateArray(473510, 512510, 1000, []),
-//   generateArray(473509, 513509, 1000, []),
-//   generateArray(474508, 513508, 1000, []),
-//   generateArray(475507, 514507, 1000, []),
-//   generateArray(475506, 514506, 1000, []),
-//   generateArray(475505, 515505, 1000, []),
-//   generateArray(476504, 515504, 1000, []),
-//   generateArray(476503, 516503, 1000, []),
-//   generateArray(477502, 516502, 1000, []),
-//   generateArray(477501, 517501, 1000, []),
-//   generateArray(478500, 517500, 1000, []),
-//   generateArray(478499, 518499, 1000, []),
-//   generateArray(479498, 518498, 1000, [501498]),
-//   generateArray(479497, 519497, 1000, [501497]),
-//   generateArray(480496, 519496, 1000, [500496, 501496, 502496]),
-//   generateArray(480495, 520495, 1000, [500495, 501495, 502495]),
-//   generateArray(481494, 520494, 1000, [499494, 500494, 501494, 502494, 503494]),
-//   generateArray(481493, 521493, 1000, [499493, 500493, 501493, 502493, 503493]),
-//   generateArray(
-//     482492,
-//     521492,
-//     1000,
-//     [498492, 499492, 500492, 501492, 502492, 503492, 504492]
-//   ),
-//   generateArray(
-//     482491,
-//     522491,
-//     1000,
-//     [498491, 499491, 500491, 501491, 502491, 503491, 504491]
-//   ),
-//   generateArray(
-//     483490,
-//     522490,
-//     1000,
-//     [497490, 498490, 499490, 500490, 501490, 502490, 503490, 504490, 505490]
-//   ),
-//   generateArray(
-//     483489,
-//     522489,
-//     1000,
-//     [497489, 498489, 499489, 500489, 501489, 502489, 503489, 504489, 505489]
-//   ),
-//   generateArray(
-//     484488,
-//     521488,
-//     1000,
-//     [
-//       496488, 497488, 498488, 499488, 500488, 501488, 502488, 503488, 504488,
-//       505488, 506488,
-//     ]
-//   ),
-//   generateArray(
-//     484487,
-//     521487,
-//     1000,
-//     [
-//       496487, 497487, 498487, 499487, 500487, 501487, 502487, 503487, 504487,
-//       505487, 506487,
-//     ]
-//   ),
-//   generateArray(
-//     485486,
-//     520486,
-//     1000,
-//     [
-//       495486, 496486, 497486, 498486, 499486, 500486, 501486, 502486, 503486,
-//       504486, 505486, 506486, 507486,
-//     ]
-//   ),
-//   generateArray(
-//     485485,
-//     520485,
-//     1000,
-//     [
-//       495485, 496485, 497485, 498485, 499485, 500485, 501485, 502485, 503485,
-//       504485, 505485, 506485, 507485,
-//     ]
-//   ),
-//   generateArray(
-//     486484,
-//     519484,
-//     1000,
-//     [
-//       494484, 495484, 496484, 497484, 498484, 499484, 500484, 501484, 502484,
-//       503484, 504484, 505484, 506484, 507484, 508484,
-//     ]
-//   ),
-//   generateArray(
-//     486483,
-//     519483,
-//     1000,
-//     [
-//       494483, 495483, 496483, 497483, 498483, 499483, 500483, 501483, 502483,
-//       503483, 504483, 505483, 506483, 507483, 508483,
-//     ]
-//   ),
-//   generateArray(487482, 492482, 1000, []),
-//   generateArray(510482, 518482, 1000, []),
-//   generateArray(487481, 492481, 1000, []),
-//   generateArray(510481, 518481, 1000, []),
-//   generateArray(488480, 491480, 1000, []),
-//   generateArray(511480, 517480, 1000, []),
-//   generateArray(488479, 491479, 1000, []),
-//   generateArray(511479, 517479, 1000, []),
-//   generateArray(489478, 490478, 1000, []),
-//   generateArray(512478, 516478, 1000, []),
-//   generateArray(489477, 490477, 1000, []),
-//   generateArray(512477, 516477, 1000, []),
-//   generateArray(513476, 515476, 1000, []),
-//   generateArray(513475, 515475, 1000, []),
-// ].flat();
-
-// const originalPixelIds = [
-//   generateArray(30240, 157240, 1000, [86240]),
-//   generateArray(30239, 157239, 1000, [85239, 86239, 87239]),
-//   generateArray(
-//     30238,
-//     157238,
-//     1000,
-//     [82238, 83238, 84238, 85238, 86238, 87238, 88238, 89238, 80238]
-//   ),
-//   generateArray(30237, 157237, 1000, [85237, 86237, 87237]),
-//   generateArray(30236, 157236, 1000, [86236]),
-//   generateArray(30235, 157235, 1000, [86235]),
-//   generateArray(30234, 157234, 1000, [86234, 108234, 109234, 110234]),
-//   generateArray(30233, 157233, 1000, [108233, 109233, 110233]),
-//   generateArray(30232, 157232, 1000, [108232, 109232, 110232]),
-//   generateArray(30231, 157231, 1000, []),
-//   generateArray(30229, 157229, 1000, []),
-//   generateArray(30228, 157228, 1000, [118228, 125228, 147228, 149228]),
-//   generateArray(30227, 157227, 1000, [119227, 124227, 148228]),
-//   generateArray(30226, 157226, 1000, [120226, 121226, 122226, 147226, 149226]),
-//   generateArray(30225, 157225, 1000, [120225, 121225, 122225]),
-//   generateArray(30224, 157224, 1000, [120224, 121224, 122224]),
-//   generateArray(30223, 157223, 1000, [120223, 121223, 122223]),
-//   generateArray(30222, 157222, 1000, [119222, 124222, 46222]),
-//   generateArray(30221, 157221, 1000, [118221, 125221, 46221, 105221]),
-//   generateArray(30220, 157220, 1000, [46220, 105220]),
-//   generateArray(
-//     30219,
-//     157219,
-//     1000,
-//     [43219, 44219, 45219, 46219, 47219, 48219, 49219, 105221]
-//   ),
-// ].flat();
+const rootColor = "#3690EA";
 
 const originalPixelIds = [
-  generateArray(815634, 942634, 1000, []),
-  generateArray(815635, 942635, 1000, []),
-  generateArray(815636, 942636, 1000, []),
-  generateArray(815637, 942637, 1000, []),
-  generateArray(815638, 942638, 1000, []),
-  generateArray(815639, 942639, 1000, []),
-  generateArray(815640, 942640, 1000, []),
-  generateArray(815641, 942641, 1000, []),
-  generateArray(815642, 942642, 1000, []),
-  generateArray(815643, 942643, 1000, []),
-  generateArray(815644, 942644, 1000, []),
-  generateArray(815645, 942645, 1000, []),
-  generateArray(815646, 942646, 1000, []),
-  generateArray(815647, 942647, 1000, []),
-  generateArray(815648, 942648, 1000, []),
-  generateArray(815649, 942649, 1000, []),
-  generateArray(815650, 942650, 1000, []),
-  generateArray(815651, 942651, 1000, []),
-  generateArray(815652, 942652, 1000, []),
-  generateArray(815653, 942653, 1000, []),
-  generateArray(815742, 942742, 1000, []),
-  generateArray(815743, 942743, 1000, []),
-  generateArray(815744, 942744, 1000, []),
-  generateArray(815745, 942745, 1000, []),
-  generateArray(815746, 942746, 1000, []),
-  generateArray(815747, 942747, 1000, []),
-  generateArray(815748, 942748, 1000, []),
-  generateArray(815749, 942749, 1000, []),
-  generateArray(815750, 942750, 1000, []),
-  generateArray(815751, 942751, 1000, []),
-  generateArray(815752, 942752, 1000, []),
-  generateArray(815753, 942753, 1000, []),
-  generateArray(815754, 942754, 1000, []),
-  generateArray(815755, 942755, 1000, []),
-  generateArray(815756, 942756, 1000, []),
-  generateArray(815757, 942757, 1000, []),
-  generateArray(815758, 942758, 1000, []),
-  generateArray(815759, 942759, 1000, []),
-  generateArray(815760, 942760, 1000, []),
-  generateArray(815761, 942761, 1000, []),
+  generateArray(1, 32001, 1000, []),
+  generateArray(2, 32002, 1000, []),
+  generateArray(3, 32003, 1000, []),
+  generateArray(4, 32004, 1000, []),
+  generateArray(5, 32005, 1000, []),
+  generateArray(6, 32006, 1000, []),
+  generateArray(7, 32007, 1000, []),
+  generateArray(8, 32008, 1000, []),
+  generateArray(9, 32009, 1000, []),
+  generateArray(10, 32010, 1000, []),
+  generateArray(11, 32011, 1000, []),
+  generateArray(12, 32012, 1000, []),
+  generateArray(13, 31013, 1000, []),
+  generateArray(14, 31014, 1000, []),
+  generateArray(15, 30015, 1000, []),
+  generateArray(16, 30015, 1000, []),
+  generateArray(17, 29017, 1000, []),
+  generateArray(18, 29018, 1000, []),
+  generateArray(19, 28019, 1000, []),
+  generateArray(20, 28020, 1000, []),
+  generateArray(21, 28021, 1000, []),
+  generateArray(22, 27022, 1000, []),
+  generateArray(23, 27023, 1000, []),
+  generateArray(24, 26024, 1000, []),
+  generateArray(25, 26025, 1000, []),
+  generateArray(26, 25026, 1000, []),
+  generateArray(27, 25027, 1000, []),
+  generateArray(28, 25028, 1000, []),
+  generateArray(29, 24029, 1000, []),
+  generateArray(30, 24030, 1000, []),
 ].flat();
 
 let pixelIds = [...originalPixelIds];
@@ -491,6 +332,27 @@ async function getStartRepaint(userData, id) {
   }
 }
 
+async function subscribeTemplate(userData) {
+  try {
+    const response = await httpRequest(
+      "PUT",
+      "https://notpx.app/api/v1/image/template/subscribe/1502904019",
+      null,
+      userData
+    );
+    return response;
+  } catch (error) {
+    if (error.message.includes("401")) {
+      return 401;
+    }
+
+    if (error.message.includes("400")) {
+      return 400;
+    }
+    return 500;
+  }
+}
+
 async function claimPX(userData) {
   try {
     const response = await httpRequest(
@@ -685,6 +547,9 @@ async function processPaint() {
   let tgWebAppData = await gettgWebAppData();
   let retryCount = 0;
 
+  await subscribeTemplate(tgWebAppData);
+
+  await sleep(3000);
   while (true) {
     if (!tgWebAppData) {
       tgWebAppData = await gettgWebAppData();
@@ -789,8 +654,8 @@ async function handleReChargeSpeed() {
     return;
   }
 
-  if (statusInfo && statusInfo?.boosts?.reChargeSpeed === 11) {
-    logInfo(`ReChargeSpeed max level 11`);
+  if (statusInfo && statusInfo?.boosts?.reChargeSpeed === 7) {
+    logInfo(`ReChargeSpeed đạt level 7`);
     return;
   }
 
