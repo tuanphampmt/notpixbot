@@ -48,39 +48,68 @@ const colors = [
 
 const rootColor = "#3690EA";
 
-const originalPixelIds = [
-  generateArray(1, 32001, 1000, []),
-  generateArray(2, 32002, 1000, []),
-  generateArray(3, 32003, 1000, []),
-  generateArray(4, 32004, 1000, []),
-  generateArray(5, 32005, 1000, []),
-  generateArray(6, 32006, 1000, []),
-  generateArray(7, 32007, 1000, []),
-  generateArray(8, 32008, 1000, []),
-  generateArray(9, 32009, 1000, []),
-  generateArray(10, 32010, 1000, []),
-  generateArray(11, 32011, 1000, []),
-  generateArray(12, 32012, 1000, []),
-  generateArray(13, 31013, 1000, []),
-  generateArray(14, 31014, 1000, []),
-  generateArray(15, 30015, 1000, []),
-  generateArray(16, 30015, 1000, []),
-  generateArray(17, 29017, 1000, []),
-  generateArray(18, 29018, 1000, []),
-  generateArray(19, 28019, 1000, []),
-  generateArray(20, 28020, 1000, []),
-  generateArray(21, 28021, 1000, []),
-  generateArray(22, 27022, 1000, []),
-  generateArray(23, 27023, 1000, []),
-  generateArray(24, 26024, 1000, []),
-  generateArray(25, 26025, 1000, []),
-  generateArray(26, 25026, 1000, []),
-  generateArray(27, 25027, 1000, []),
-  generateArray(28, 25028, 1000, []),
-  generateArray(29, 24029, 1000, []),
-  generateArray(30, 24030, 1000, []),
-].flat();
+// const originalPixelIds = [
+//   generateArray(1, 32001, 1000, []),
+//   generateArray(2, 32002, 1000, []),
+//   generateArray(3, 32003, 1000, []),
+//   generateArray(4, 32004, 1000, []),
+//   generateArray(5, 32005, 1000, []),
+//   generateArray(6, 32006, 1000, []),
+//   generateArray(7, 32007, 1000, []),
+//   generateArray(8, 32008, 1000, []),
+//   generateArray(9, 32009, 1000, []),
+//   generateArray(10, 32010, 1000, []),
+//   generateArray(11, 32011, 1000, []),
+//   generateArray(12, 32012, 1000, []),
+//   generateArray(13, 31013, 1000, []),
+//   generateArray(14, 31014, 1000, []),
+//   generateArray(15, 30015, 1000, []),
+//   generateArray(16, 30015, 1000, []),
+//   generateArray(17, 29017, 1000, []),
+//   generateArray(18, 29018, 1000, []),
+//   generateArray(19, 28019, 1000, []),
+//   generateArray(20, 28020, 1000, []),
+//   generateArray(21, 28021, 1000, []),
+//   generateArray(22, 27022, 1000, []),
+//   generateArray(23, 27023, 1000, []),
+//   generateArray(24, 26024, 1000, []),
+//   generateArray(25, 26025, 1000, []),
+//   generateArray(26, 25026, 1000, []),
+//   generateArray(27, 25027, 1000, []),
+//   generateArray(28, 25028, 1000, []),
+//   generateArray(29, 24029, 1000, []),
+//   generateArray(30, 24030, 1000, []),
+// ].flat();
 
+const originalPixelIds = [
+  generateArray(290204, 351204, 1000, []),
+  generateArray(290205, 351205, 1000, []),
+  generateArray(290206, 351206, 1000, []),
+  generateArray(290207, 351207, 1000, []),
+  generateArray(290208, 351208, 1000, []),
+  generateArray(290209, 351209, 1000, []),
+  generateArray(290210, 351210, 1000, []),
+  generateArray(290211, 351211, 1000, []),
+  generateArray(290212, 351212, 1000, []),
+  generateArray(290213, 351213, 1000, []),
+  generateArray(290214, 351214, 1000, []),
+  generateArray(290215, 320215, 1000, []),
+  generateArray(290216, 320216, 1000, []),
+  generateArray(290217, 319217, 1000, []),
+  generateArray(290218, 319218, 1000, []),
+  generateArray(290219, 318219, 1000, []),
+  generateArray(290220, 318220, 1000, []),
+  generateArray(290221, 317221, 1000, []),
+  generateArray(290222, 317222, 1000, []),
+  generateArray(290223, 317223, 1000, []),
+  generateArray(290224, 316224, 1000, []),
+  generateArray(290225, 316225, 1000, []),
+  generateArray(290226, 315226, 1000, []),
+  generateArray(290227, 315227, 1000, []),
+  generateArray(290228, 314228, 1000, []),
+  generateArray(290229, 314229, 1000, []),
+  generateArray(290230, 314230, 1000, []),
+].flat();
 let pixelIds = [...originalPixelIds];
 
 const userAgents = [
@@ -188,6 +217,30 @@ async function getStatusUser(userData) {
       "GET",
       "https://notpx.app/api/v1/mining/status",
       null,
+      userData
+    );
+    return response;
+  } catch (error) {
+    if (error.message.includes("401")) {
+      return 401;
+    }
+
+    if (error.message.includes("400")) {
+      return 400;
+    }
+    return 500;
+  }
+}
+
+async function special(userData) {
+  try {
+    const response = await httpRequest(
+      "POST",
+      "https://notpx.app/api/v1/repaint/special",
+      {
+        pixelId: 511393,
+        type: 7,
+      },
       userData
     );
     return response;
@@ -628,6 +681,79 @@ async function processPaint() {
   }
 }
 
+async function processPaintSpecial() {
+  logInfo("######## Bắt đầu tô màu halloween nhé ##########");
+
+  let tgWebAppData = await gettgWebAppData();
+  let retryCount = 0;
+  await sleep(5000);
+  while (true) {
+    if (!tgWebAppData) {
+      tgWebAppData = await gettgWebAppData();
+      continue;
+    }
+
+    let statusInfo = await getStatusUser(tgWebAppData);
+    if (statusInfo === 401 || statusInfo === 400) {
+      reloadIframe();
+      return;
+    } else if (statusInfo === 500) {
+      retryCount++;
+      logError("Không tìm thấy user. Retry lần: ", retryCount);
+      if (retryCount > 5) {
+        reloadIframe();
+      }
+      await sleep(5000);
+      continue;
+    }
+
+    let charges =
+      Object.keys(statusInfo.goods) === 0 ? 0 : statusInfo.goods["7"] || 0;
+
+    logInfo(`Tổng số lần tô màu halloween của bạn là: ${charges}`);
+
+    for (let i = charges; i > 0; i--) {
+      const resultSpecial = await special(tgWebAppData);
+      if (resultSpecial === 401 || resultSpecial === 400) {
+        reloadIframe();
+        return;
+      } else if (resultSpecial === 500) {
+        break;
+      }
+
+      if (resultSpecial) {
+        logInfo(`Bạn đã tô màu halloween thành công`);
+      }
+      await sleep(2000);
+    }
+
+    statusInfo = await getStatusUser(tgWebAppData);
+
+    if (statusInfo === 401 || statusInfo === 400) {
+      reloadIframe();
+      return;
+    } else if (statusInfo === 500) {
+      retryCount++;
+      logError("Không tìm thấy user. Retry lần: ", retryCount);
+      if (retryCount > 5) {
+        reloadIframe();
+      }
+      await sleep(5000);
+      continue;
+    }
+
+    charges =
+      Object.keys(statusInfo.goods) === 0 ? 0 : statusInfo.goods["7"] || 0;
+    if (charges === 0) {
+      break;
+    }
+
+    if (retryCount > 5) {
+      reloadIframe();
+    }
+  }
+}
+
 async function handleClaimPX() {
   let tgWebAppData = await gettgWebAppData();
   if (!tgWebAppData) return null;
@@ -751,6 +877,7 @@ async function handleTasks() {
     return;
   }
   let tasks = [
+    "pumpkin",
     "boinkTask",
     "jettonTask",
     "joinSquad",
@@ -806,6 +933,7 @@ const intervalId = setInterval(async () => {
   }
 }, 1000 * 60 * 2); // 2 phút
 
+processPaintSpecial();
 handleTasks();
 handleEnergyLimit();
 handleReChargeSpeed();
