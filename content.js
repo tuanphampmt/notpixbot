@@ -489,6 +489,20 @@ async function gettgWebAppData() {
         cancelable: true,
       })
     );
+    await sleep(5000);
+    const lauchButton2 = document.querySelector(
+      "button.popup-button.btn.primary.rp"
+    );
+    if (lauchButton2) {
+      lauchButton2?.dispatchEvent(
+        new MouseEvent("click", {
+          view: window,
+          bubbles: true,
+          cancelable: true,
+        })
+      );
+    }
+
     iframe = await observeIframe();
     if (iframe) {
       logInfo("Dữ liệu lấy được:", parseUserData(iframe.src || ""));
@@ -780,8 +794,8 @@ async function handleReChargeSpeed() {
     return;
   }
 
-  if (statusInfo && statusInfo?.boosts?.reChargeSpeed >= 7) {
-    logInfo(`ReChargeSpeed đạt level lớn hơn 7`);
+  if (statusInfo && statusInfo?.boosts?.reChargeSpeed === 11) {
+    logInfo(`ReChargeSpeed đạt max level 11`);
     return;
   }
 
@@ -933,7 +947,7 @@ const intervalId = setInterval(async () => {
   }
 }, 1000 * 60 * 2); // 2 phút
 
-processPaintSpecial();
+// processPaintSpecial();
 handleTasks();
 handleEnergyLimit();
 handleReChargeSpeed();
